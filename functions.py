@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import sys
 from collections import defaultdict
 from pprint import pprint
 
@@ -17,7 +18,9 @@ from scipy import stats
 from tqdm import tqdm
 
 RGB = ['red','green','blue']
-distributions={'beta':0, 'gamma':0, 'laplace':0, 'norm':0, 'pareto':0}
+DISTRIBUTIONS=['beta', 'gamma', 'laplace', 'norm', 'pareto']
+
+output_dir = sys.argv[0].split('.')[1].split('/')[1]
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -82,40 +85,53 @@ def get_image_info(image_index,image_name,color_index):
         'average': np.average(a), # средневзвешенное(мат ожидание)
         'std': np.nanstd(a), # среднеквадратичное (стандартное) отклонение
         'skewness': sp.stats.skew(a), # коэффициент асимметрии
-        'kurtosis': sp.stats.kurtosis(a), # коэффицие́нт эксце́сса
+        'kurtosis': sp.stats.kurtosis(a)-3, # коэффицие́нт эксце́сса (нормализированный)
         'interquartile range': sp.stats.iqr(a), # интерквартильный размах
-        'best distribution': get_image_histogram(image_index,image_name)
+        'best distribution': get_image_histogram(image_index,image_name,color_index) # вид распределения с мин ошибкой
         } 
     return d
 
-def get_image_histogram(image_index,image_name):
+def get_image_histogram(image_index,image_name,color_index):
     print('\n\n\t>>Get histogram about:  '+ image_name)
-    for color_index,color_name in enumerate(RGB): 
-        plt.figure() 
-        image = np.array(Image.open(os.path.join(image_name))) 
-        a = image[ :, color_index].ravel() 
-        f = Fitter(a, distributions=distributions.keys(), bins=256) 
-        f.fit() 
-        pprint(f.summary()) 
-        f.hist(); 
-        best_distribution = f.get_best()
-        print('\n\n\n********************************')
-        print(best_distribution)
-        print('********************************\n\n\n')
-        plt.xlim(0,255)
-        plt.xlabel('Brightness')
-        plt.ylabel('Frequency')
-        plt.title('Image '+ str(image_name)+ ' with index '+ str(image_index))
-        plt.savefig('./output/lab1/'+str(color_name)+'_histograms/'+str(image_index)+'.png')           
+    plt.figure() 
+    image = np.array(Image.open(os.path.join(image_name))) 
+    a = image[ :, color_index].ravel() 
+    color_name = RGB[color_index]
+    print('\n\n\n********************************')
+    print('Color: '+ str(color_name)+ ' | Image '+ str(image_name)+'\n')
+    f = Fitter(a, distributions=DISTRIBUTIONS, bins=256) 
+    f.fit() 
+    pprint(f.summary()) 
+    f.hist()
+    best_distribution = f.get_best()
+    print(best_distribution)
+    print('********************************\n\n\n')
+    plt.xlim(0,255)
+    plt.xlabel('Brightness')
+    plt.ylabel('Frequency')
+    plt.title('Image '+ str(image_name)+ ' with index '+ str(image_index))
+    plt.savefig('./output/'+output_dir+'/'+str(color_name)+'_histograms/'+str(image_index)+'.png')           
     return best_distribution.keys()[0]
 
+def get_distribution_of_distributions(distributions):
+    pprint(distributions)
+    for color_index,color_name in enumerate(RGB): 
+        distributions[color_name]
 def get_images_info(image_list):
     data = {}
     print('\n\n\n\n>>Analyzing images')
+    
+    distributions={}
     for color_index,color_name in enumerate(RGB): 
+        distributions[color_name]={}
+        for distribution in DISTRIBUTIONS:
+            distributions[color_name][distribution] = 0
         print('\t\t>>Get info about '+str(color_name)+' color')
         data[color_name] = pd.DataFrame() 
         for image_index,image_name in tqdm(enumerate(image_list)):
-           data[color_name] = pd.concat([data[color_name], pd.DataFrame(pd.DataFrame(get_image_info(image_index,image_name,color_index), index=[0, ]))], ignore_index=True)
-        data[color_name].to_csv(path_or_buf='./output/lab1/'+color_name+'.csv',index=False)  
-        print('\t\t>>Write data to ./output/lab1/'+color_name+'.csv\n\n')
+           image_info =  get_image_info(image_index,image_name,color_index)
+           distributions[color_name][image_info['best distribution']]+= 1
+           data[color_name] = pd.concat([data[color_name], pd.DataFrame(pd.DataFrame(image_info, index=[0, ]))] , ignore_index=True)     
+        data[color_name].to_csv(path_or_buf='./output/'+output_dir+'/'+color_name+'.csv',index=False)   
+        print('\t\t>>Write data to ./output/'+output_dir+'/'+color_name+'.csv\n\n')
+    get_distribution_of_distributions(distributions)
