@@ -10,7 +10,7 @@ Repo for lab works
 | Course | 5 |
 | Variant | 14|
 | Report #1 | [Link](https://docs.google.com/document/d/17XYFA0iRnTYShxJMO5zVkqcA0Pe6QfQEyWQBzSSRirc/edit?usp=sharing)|
-
+| Report #2 | [Link](https://docs.google.com/document/d/1M1SfdVymhskQUDKvCqbayXEhfLb1PitCiyb6rvOCaTk/edit?usp=sharing)|
 
 ## Вихідні дані
 
