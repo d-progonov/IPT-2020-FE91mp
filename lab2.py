@@ -10,5 +10,5 @@ if __name__ == "__main__":
     files = lib.create_list_files() 
     index_list,files = lib.create_index_list(files,config['countImages'])
     vectorData = lib.get_images_vectorData(files)
-    # vectors = lib
+    vectors = lib.create_vectors(vectorData)
     print('>>Finish lab2\n')

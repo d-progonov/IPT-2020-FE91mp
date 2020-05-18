@@ -169,7 +169,6 @@ def get_images_info(image_list):
 def get_images_vectorData(image_list):
     data = {}
     print('\n\n\n\n>>Creating vectors of images')
-
     vectorData = {}
     for color_index, color_name in enumerate(RGB):
         vectorData[color_name] = {}
@@ -177,7 +176,6 @@ def get_images_vectorData(image_list):
         data[color_name] = pd.DataFrame()
         for image_index, image_name in tqdm(enumerate(image_list)):
             image_info = get_image_info_vectors(image_index, image_name, color_index)
-            pprint(image_info)
             for parameter in image_info:
                 if not parameter in vectorData[color_name]:
                     vectorData[color_name][parameter] = []
@@ -186,14 +184,66 @@ def get_images_vectorData(image_list):
         output_file_path='./output/'+output_dir+'/vectorData/'+color_name+'.csv'
         output_file = open(output_file_path, "w")
         writer = csv.writer(output_file)
-        vectorDataKeys = vectorData[color_name].keys()
-        writer.writerow(vectorDataKeys)
-        for i in tqdm(range(len(vectorData[color_name][vectorDataKeys[0]]))):
+        vectorDataParameters = vectorData[color_name].keys()
+        writer.writerow(vectorDataParameters)
+        for i in tqdm(range(len(vectorData[color_name][vectorDataParameters[0]]))):
             row = []
-            for parameter in vectorDataKeys:
+            for parameter in vectorDataParameters:
                 row.append(vectorData[color_name][parameter][i])
             writer.writerow(row)
         print('\t\t>>Write data to '+output_file_path+'\n\n')
     return vectorData
 
-# def create_vectors(vectorData):
+def create_vectors(vectorData):
+    vector = []
+    for color_name in vectorData:
+        v = np.array([vectorData[color_name]['mean'], vectorData[color_name]['var'], vectorData[color_name]['skewness'], vectorData[color_name]['kurtosis']])
+        vector.append(v)
+
+    vector = np.array(vector)
+
+    output_file_path='./output/'+output_dir+'/vectors/vector.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(vector)
+
+    matrix = []
+    vectorDataParameters = vectorData[color_name].keys()
+    for parameter in vectorDataParameters:
+        m = np.array((vectorData['red'][parameter], vectorData['green'][parameter], vectorData['blue'][parameter]))
+        matrix.append(m)
+
+    
+    # print('Mean:\n')
+    # print(matrix)
+    output_file_path='./output/'+output_dir+'/vectors/mean_matrix.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(matrix)
+
+    mean_var_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var']))
+    # print('Mean and var:\n')
+    # print(mean_var_v)
+
+    output_file_path='./output/'+output_dir+'/vectors/mean_var_vector.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_vector)
+
+    mean_var_skew_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness']))
+    # print('Mean and var and skew:\n')
+    # print(mean_var_skew_v)
+
+    output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_vector.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_skew_vector)
+
+    mean_var_skew_kurt_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
+             vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis']))
+    # print('Mean and var and skew and kurt:\n')
+    # print(mean_var_skew_kurt_v)
+    output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_kurt_vector.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_skew_kurt_vector)
