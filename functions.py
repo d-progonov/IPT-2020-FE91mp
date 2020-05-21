@@ -16,6 +16,7 @@ from fitter import Fitter
 from PIL import Image
 from scipy import stats
 from tqdm import tqdm
+from matplotlib import image as img
 
 RGB = ['red', 'green', 'blue']
 DISTRIBUTIONS = ['beta', 'gamma', 'laplace', 'norm', 'pareto']
@@ -168,7 +169,7 @@ def get_images_info(image_list):
 
 def get_images_vectorData(image_list):
     data = {}
-    print('\n\n\n\n>>Creating vectors of images')
+    print('\n\n\n\n>>Get vector data of images')
     vectorData = {}
     for color_index, color_name in enumerate(RGB):
         vectorData[color_name] = {}
@@ -195,6 +196,7 @@ def get_images_vectorData(image_list):
     return vectorData
 
 def create_vectors(vectorData):
+    print('>>Creating vectors')
     vector = []
     for color_name in vectorData:
         v = np.array([vectorData[color_name]['mean'], vectorData[color_name]['var'], vectorData[color_name]['skewness'], vectorData[color_name]['kurtosis']])
@@ -212,17 +214,12 @@ def create_vectors(vectorData):
         m = np.array((vectorData['red'][parameter], vectorData['green'][parameter], vectorData['blue'][parameter]))
         matrix.append(m)
 
-    
-    # print('Mean:\n')
-    # print(matrix)
     output_file_path='./output/'+output_dir+'/vectors/mean_matrix.txt' 
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(matrix)
 
     mean_var_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
              vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var']))
-    # print('Mean and var:\n')
-    # print(mean_var_v)
 
     output_file_path='./output/'+output_dir+'/vectors/mean_var_vector.txt' 
     with open(output_file_path, 'w') as f:
@@ -231,8 +228,6 @@ def create_vectors(vectorData):
     mean_var_skew_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
              vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
              vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness']))
-    # print('Mean and var and skew:\n')
-    # print(mean_var_skew_v)
 
     output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_vector.txt' 
     with open(output_file_path, 'w') as f:
@@ -242,8 +237,110 @@ def create_vectors(vectorData):
              vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
              vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
              vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis']))
-    # print('Mean and var and skew and kurt:\n')
-    # print(mean_var_skew_kurt_v)
     output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_kurt_vector.txt' 
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_skew_kurt_vector)
+
+def get_gauss_model(vectorData):
+    print('>>Creating gauss models')
+    mean_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'])))
+    output_file_path='./output/'+output_dir+'/gaussModels/mean_g_v.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_g_v)
+
+    mean_var_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                                   vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'])))
+    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_g_v.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_g_v)
+
+    mean_var_skew_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                                        vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                                        vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'])))
+    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_skew_g_v.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_skew_g_v)
+
+    
+    mean_var_skew_kurt_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                                             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                                             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
+                                             vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis'])))
+    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_skew_kurt_g_v.txt' 
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(mean_var_skew_kurt_g_v)
+
+def PCA(img_2d, nmpc):
+    cov_mat = img_2d - np.mean(img_2d)
+    val, vec = np.linalg.eigh(np.cov(cov_mat))
+    p = np.size(vec, axis=1)
+    i = np.argsort(val)
+    i = i[::-1]
+    vec = vec[:, i]
+    val = val[i]
+
+    if (nmpc < p) or (nmpc > 0):
+        vec = vec[:, range(nmpc)]
+
+    score = np.dot(vec.T, cov_mat)
+    rcn = np.dot(vec, score) + np.mean(img_2d).T
+    rcn_img_mat = np.uint8(np.absolute(rcn))
+    return rcn_img_mat
+
+
+def get_mse(first_img, second_img):
+    err = np.sum((first_img.astype("float") - second_img.astype("float")) ** 2)
+    err /= float(first_img.shape[0] * first_img.shape[1])
+
+    return err
+
+def decompose(files): #5
+    decomposed_data={}
+    for file_path in tqdm(files):
+        img_data = img.imread(file_path)
+        values = np.zeros((3, 256))
+        for i in range(img_data.shape[0]):
+            for j in range(img_data.shape[1]):
+                values[0][img_data[i][j][0]] += 1
+                values[1][img_data[i][j][1]] += 1
+                values[2][img_data[i][j][2]] += 1
+
+        test = img_data
+        test_np = np.array(test)
+        red = test_np[:, :, 0]
+        green = test_np[:, :, 1]
+        blue = test_np[:, :, 2]
+
+        number_of_comp = [5, 30, 80]
+        filename = file_path.split('.')[1].split('/')[-1]
+        
+        if not os.path.exists('./output/'+output_dir+'/PCA/'+str(filename)):
+            os.makedirs('./output/'+output_dir+'/PCA/'+str(filename))
+
+        plt.figure(figsize=(20, 20))
+        plt.title('original')
+        plt.imshow(img_data)
+        plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/original.png')
+
+        for number in number_of_comp:
+            red_rcn, green_rcn, blue_rcn = PCA(red, number), PCA(green, number), PCA(blue, number)
+            rcn_img = np.dstack((red_rcn, green_rcn, blue_rcn))
+            plt.figure()
+            plt.title(str(number)+ ' components')
+            plt.imshow(rcn_img)
+            plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/'+str(number)+'_components.png')
+
+        all_mse = list()
+        for i in range(100):
+            test_r_recon, test_g_recon, test_b_recon = PCA(red, i), PCA(green, i), PCA(blue, i)
+            rcn_img = np.dstack((test_r_recon, test_g_recon, test_b_recon))
+            all_mse.append(get_mse(test, rcn_img))
+
+        plt.figure()
+        plt.plot(range(len(all_mse)), all_mse)
+        plt.xlabel("components")
+        plt.ylabel("MSE")
+        plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/mse.png')
+        decomposed_data[filename] = {'red':red, 'green':green, 'blue':blue}
+    return decomposed_data
+

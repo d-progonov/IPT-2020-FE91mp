@@ -1,0 +1,105 @@
+NAME
+
+   Jpeg Essential Tool (JET), version 2.2
+   - MODULE 1 - Extractor of Merged 274 Features
+
+AUTHOR
+
+   Jan Kodovsky, SUNY Binghamton, 2007-2009
+   jan@kodovsky.com
+
+DISCLAIMER
+
+   Program is available for public use. Please, do not forget to give us credit
+   by citing appropriate  publication.  For that  purpose, use the BibTeX files
+   available at http://dde.binghamton.edu/ccmerged/.
+
+   Thank you.
+
+INSTALLATION
+
+   Program is platform independent. Before you start  compiling the source, you
+   need to modify the file 'src/platform.h' in order to  set  platform specific
+   settings. For that purpose, follow the instructions given in that file. Fur-
+   thermore, this  program  depends on two publicly available libraries, namely
+   boost and jpeglib. You can download both by following the links given in the
+   DEPENDENCIES section below. You may need to modify the library paths in  the
+   makefile  src/Makefile. After successful compilation, we recommend to verify
+   the correct compilation by extracting the features from the enclosed testing
+   image files located in the directory  'test'. Expected  features  are stored
+   in the following files:
+   
+   test/data/expected-merged.fea
+   test/data/expected-cc-merged.fea
+
+   In case of any questions or comments, please feel free to contact the author
+   at jan@kodovsky.com.
+
+   Thank you.
+
+SYNOPSIS
+
+   extract [options] DIR
+
+DESCRIPTION
+
+   This program calculates 274 merged extended DCT and Markov features [1] from
+   all the JPEG images  in the given directory DIR.  Features are stored in the
+   row by row manner, at the end of each row the name of the processed image is
+   printed. Option calitype  allows to extract cartesian calibrated (cc-merged)
+   features introduced in [2].
+
+OPTIONS
+
+   -h
+   --help
+      Print this help.
+
+   -p NUM
+   --precision NUM
+      Set the precision of output features to NUM decimal points. Default value
+      of precision is 8.
+
+   -o FILENAME
+   --output FILENAME
+      Save  the  calculated  features  in  the given  FILENAME (path).  If this
+      option  is not specified,  resulting features  will be  saved in the file
+      './data/merged.fea'  created  in the same  directory where the input JPEG
+      images are located.
+
+   -c NUM NUM
+   --crop NUM NUM
+      Set by what number of pixels will be  images  cropped during calibration.
+      First  and  second  parameter  corresponds to the number  of pixels to be
+      cropped in the vertical  and  horizontal direction, respectively. Default
+      cropping is by 4 pixels in both directions.
+
+   -s FILENAME
+   --single FILENAME
+      Use  this option if you  want to calculate  the featurevector from single
+      JPEG image only, specified by FILENAME (path).If you use this option, you
+      need to  specify the output feature vector directly,  using option -o. No
+      DIR argument is expected under this scenario.
+
+   -t TYPE
+   --calitype TYPE
+      Use  this option to specify  the  way  of  calibration. TYPE='difference'
+      results in a classical  274 merged  features as introduced in [1]  and is
+      default. Option TYPE='cartesian' results in cartesian calibrated features
+      as introduced in [2].
+
+DEPENDENCIES
+
+   - boost library (filesystem, system) - www.boost.org
+   - jpeglib library - www.ijg.org
+
+REFERENCES
+
+   [1] T. Pevny and J.Fridrich, Merging Markov and DCT features for multi-class
+       JPEG steganalysis. In E.J. Delp and P.W. Wong,editors, Proceedings SPIE,
+       Electronic Imaging, Security, Steganography,and Watermarking of Multime-
+       dia Contents IX, volume 6505, pages 3 1 - 3 14, San Jose, CA, January 29
+       - February 1, 2007.
+   [2] J. Kodovsky  and  J. Fridrich,  Calibration  revisited.  In J. Dittmann,
+       S. Craver, and J.Fridrich, editors, Proceedings of the 11th ACM Multime-
+       dia & Security Workshop, Princeton, NJ, September 78, 2009.

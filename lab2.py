@@ -11,4 +11,6 @@ if __name__ == "__main__":
     index_list,files = lib.create_index_list(files,config['countImages'])
     vectorData = lib.get_images_vectorData(files)
     vectors = lib.create_vectors(vectorData)
+    gauss_models = lib.get_gauss_model(vectorData)
+    decomposed_data = lib.decompose(files)
     print('>>Finish lab2\n')
