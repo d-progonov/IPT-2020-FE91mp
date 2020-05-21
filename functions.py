@@ -377,13 +377,15 @@ def get_markov_chain(decomposed_data):
                 matrix = np.vstack((matrix, matrix1[i] / sum(matrix1[i])))
             matrix_2 = np.linalg.matrix_power(matrix, 2)
 
-        
+            if not os.path.exists('./output/'+output_dir+'/markovChain/'+str(mean)):
+                    os.makedirs('./output/'+output_dir+'/markovChain/'+str(mean))    
+
             output_file_path = './output/'+output_dir+'/markovChain/'+str(mean)+'/'+colors[m]+'_matrix.txt'
-            with open(output_file_path, 'w') as f:
+            with open(output_file_path, 'w+') as f:
                 csv.writer(f, delimiter=' ').writerows(matrix)
             
             output_file_path = './output/'+output_dir+'/markovChain/'+str(mean)+'/'+colors[m]+'_matrix_2.txt'
-            with open(output_file_path, 'w') as f:
+            with open(output_file_path, 'w+') as f:
                 csv.writer(f, delimiter=' ').writerows(matrix_2)
 
             i = 0
@@ -424,9 +426,7 @@ def get_markov_chain(decomposed_data):
                 plt.figure(figsize=(40,40))
                 plt.title(str(colors[m]) + ' ' + title)
                 g = nx.from_pandas_adjacency(dataframe)
-                nx.draw(g, with_labels=True)
-                if not os.path.exists('./output/'+output_dir+'/markovChain/'+str(mean)):
-                    os.makedirs('./output/'+output_dir+'/markovChain/'+str(mean))
+                nx.draw(g, with_labels=True,node_color=colors[m],font_color='black')
                 plt.savefig('./output/'+output_dir+'/markovChain/'+str(mean)+'/'+str(colors[m])+'.png')
                 i += 1
 
