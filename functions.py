@@ -6,8 +6,9 @@ import sys
 from collections import defaultdict
 from pprint import pprint
 
+import networkx as nx
 import numpy as np
-import csv 
+import csv
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy as sp
@@ -17,6 +18,7 @@ from PIL import Image
 from scipy import stats
 from tqdm import tqdm
 from matplotlib import image as img
+from numpy.linalg import matrix_power
 
 RGB = ['red', 'green', 'blue']
 DISTRIBUTIONS = ['beta', 'gamma', 'laplace', 'norm', 'pareto']
@@ -176,13 +178,14 @@ def get_images_vectorData(image_list):
         print('\t\t>>Get info about '+str(color_name)+' color')
         data[color_name] = pd.DataFrame()
         for image_index, image_name in tqdm(enumerate(image_list)):
-            image_info = get_image_info_vectors(image_index, image_name, color_index)
+            image_info = get_image_info_vectors(
+                image_index, image_name, color_index)
             for parameter in image_info:
                 if not parameter in vectorData[color_name]:
                     vectorData[color_name][parameter] = []
                 vectorData[color_name][parameter].append(image_info[parameter])
 
-        output_file_path='./output/'+output_dir+'/vectorData/'+color_name+'.csv'
+        output_file_path = './output/'+output_dir+'/vectorData/'+color_name+'.csv'
         output_file = open(output_file_path, "w")
         writer = csv.writer(output_file)
         vectorDataParameters = vectorData[color_name].keys()
@@ -195,80 +198,87 @@ def get_images_vectorData(image_list):
         print('\t\t>>Write data to '+output_file_path+'\n\n')
     return vectorData
 
+
 def create_vectors(vectorData):
     print('>>Creating vectors')
     vector = []
     for color_name in vectorData:
-        v = np.array([vectorData[color_name]['mean'], vectorData[color_name]['var'], vectorData[color_name]['skewness'], vectorData[color_name]['kurtosis']])
+        v = np.array([vectorData[color_name]['mean'], vectorData[color_name]['var'],
+                      vectorData[color_name]['skewness'], vectorData[color_name]['kurtosis']])
         vector.append(v)
 
     vector = np.array(vector)
 
-    output_file_path='./output/'+output_dir+'/vectors/vector.txt' 
+    output_file_path = './output/'+output_dir+'/vectors/vector.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(vector)
 
     matrix = []
     vectorDataParameters = vectorData[color_name].keys()
     for parameter in vectorDataParameters:
-        m = np.array((vectorData['red'][parameter], vectorData['green'][parameter], vectorData['blue'][parameter]))
+        m = np.array((vectorData['red'][parameter], vectorData['green']
+                      [parameter], vectorData['blue'][parameter]))
         matrix.append(m)
 
-    output_file_path='./output/'+output_dir+'/vectors/mean_matrix.txt' 
+    output_file_path = './output/'+output_dir+'/vectors/mean_matrix.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(matrix)
 
-    mean_var_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var']))
+    mean_var_vector = ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                        vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var']))
 
-    output_file_path='./output/'+output_dir+'/vectors/mean_var_vector.txt' 
+    output_file_path = './output/'+output_dir+'/vectors/mean_var_vector.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_vector)
 
-    mean_var_skew_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
-             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness']))
+    mean_var_skew_vector = ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness']))
 
-    output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_vector.txt' 
+    output_file_path = './output/'+output_dir+'/vectors/mean_var_skew_vector.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_skew_vector)
 
-    mean_var_skew_kurt_vector= ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
-             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
-             vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis']))
-    output_file_path='./output/'+output_dir+'/vectors/mean_var_skew_kurt_vector.txt' 
+    mean_var_skew_kurt_vector = ((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
+                                  vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                                  vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
+                                  vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis']))
+    output_file_path = './output/'+output_dir + \
+        '/vectors/mean_var_skew_kurt_vector.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_skew_kurt_vector)
 
+
 def get_gauss_model(vectorData):
     print('>>Creating gauss models')
-    mean_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'])))
-    output_file_path='./output/'+output_dir+'/gaussModels/mean_g_v.txt' 
+    mean_g_v = np.cov(np.vstack(
+        (vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'])))
+    output_file_path = './output/'+output_dir+'/gaussModels/mean_g_v.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_g_v)
 
     mean_var_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-                                   vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'])))
-    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_g_v.txt' 
+                                     vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'])))
+    output_file_path = './output/'+output_dir+'/gaussModels/mean_var_g_v.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_g_v)
 
     mean_var_skew_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-                                        vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
-                                        vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'])))
-    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_skew_g_v.txt' 
+                                          vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                                          vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'])))
+    output_file_path = './output/'+output_dir+'/gaussModels/mean_var_skew_g_v.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_skew_g_v)
 
-    
     mean_var_skew_kurt_g_v = np.cov(np.vstack((vectorData['red']['mean'], vectorData['green']['mean'], vectorData['blue']['mean'],
-                                             vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
-                                             vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
-                                             vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis'])))
-    output_file_path='./output/'+output_dir+'/gaussModels/mean_var_skew_kurt_g_v.txt' 
+                                               vectorData['red']['var'], vectorData['green']['var'], vectorData['blue']['var'],
+                                               vectorData['red']['skewness'], vectorData['green']['skewness'], vectorData['blue']['skewness'],
+                                               vectorData['red']['kurtosis'], vectorData['green']['kurtosis'], vectorData['blue']['kurtosis'])))
+    output_file_path = './output/'+output_dir + \
+        '/gaussModels/mean_var_skew_kurt_g_v.txt'
     with open(output_file_path, 'w') as f:
         csv.writer(f, delimiter=' ').writerows(mean_var_skew_kurt_g_v)
+
 
 def PCA(img_2d, nmpc):
     cov_mat = img_2d - np.mean(img_2d)
@@ -294,8 +304,10 @@ def get_mse(first_img, second_img):
 
     return err
 
-def decompose(files): #5
-    decomposed_data={}
+
+def decompose(files): 
+    print('>>Decomposing images')
+    decomposed_data = {}
     for file_path in tqdm(files):
         img_data = img.imread(file_path)
         values = np.zeros((3, 256))
@@ -313,26 +325,30 @@ def decompose(files): #5
 
         number_of_comp = [5, 30, 80]
         filename = file_path.split('.')[1].split('/')[-1]
-        
+
         if not os.path.exists('./output/'+output_dir+'/PCA/'+str(filename)):
             os.makedirs('./output/'+output_dir+'/PCA/'+str(filename))
 
         plt.figure(figsize=(20, 20))
         plt.title('original')
         plt.imshow(img_data)
-        plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/original.png')
+        plt.savefig('./output/'+output_dir+'/PCA/' +
+                    str(filename)+'/original.png')
 
         for number in number_of_comp:
-            red_rcn, green_rcn, blue_rcn = PCA(red, number), PCA(green, number), PCA(blue, number)
+            red_rcn, green_rcn, blue_rcn = PCA(red, number), PCA(
+                green, number), PCA(blue, number)
             rcn_img = np.dstack((red_rcn, green_rcn, blue_rcn))
             plt.figure()
-            plt.title(str(number)+ ' components')
+            plt.title(str(number) + ' components')
             plt.imshow(rcn_img)
-            plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/'+str(number)+'_components.png')
+            plt.savefig('./output/'+output_dir+'/PCA/' +
+                        str(filename)+'/'+str(number)+'_components.png')
 
         all_mse = list()
         for i in range(100):
-            test_r_recon, test_g_recon, test_b_recon = PCA(red, i), PCA(green, i), PCA(blue, i)
+            test_r_recon, test_g_recon, test_b_recon = PCA(
+                red, i), PCA(green, i), PCA(blue, i)
             rcn_img = np.dstack((test_r_recon, test_g_recon, test_b_recon))
             all_mse.append(get_mse(test, rcn_img))
 
@@ -341,6 +357,77 @@ def decompose(files): #5
         plt.xlabel("components")
         plt.ylabel("MSE")
         plt.savefig('./output/'+output_dir+'/PCA/'+str(filename)+'/mse.png')
-        decomposed_data[filename] = {'red':red, 'green':green, 'blue':blue}
+        decomposed_data[filename] = {'red': red, 'green': green, 'blue': blue}
     return decomposed_data
 
+
+def get_markov_chain(decomposed_data):
+    print('>>Creating markov chains')
+    for mean in tqdm(decomposed_data): 
+        colors = ['red', 'green', 'blue']
+        m = 0
+        for key in decomposed_data[mean]:
+            matrix1 = np.zeros(shape=(256, 256))
+            array = decomposed_data[mean][key].flatten('F')
+            prev_color = array[0]
+            for i in range(len(array) - 1):
+                matrix1[array[i]][array[i + 1]] += 1
+            matrix = matrix1[0] / sum(matrix1[0])
+            for i in range(1, 256):
+                matrix = np.vstack((matrix, matrix1[i] / sum(matrix1[i])))
+            matrix_2 = np.linalg.matrix_power(matrix, 2)
+
+        
+            output_file_path = './output/'+output_dir+'/markovChain/'+str(mean)+'/'+colors[m]+'_matrix.txt'
+            with open(output_file_path, 'w') as f:
+                csv.writer(f, delimiter=' ').writerows(matrix)
+            
+            output_file_path = './output/'+output_dir+'/markovChain/'+str(mean)+'/'+colors[m]+'_matrix_2.txt'
+            with open(output_file_path, 'w') as f:
+                csv.writer(f, delimiter=' ').writerows(matrix_2)
+
+            i = 0
+            matrix_list = [matrix, matrix_2]
+            for mat in matrix_list:
+                if i == 0:
+                    title = 'first_order'
+                else:
+                    title = 'second_order'
+                file_checks = open('./output/'+output_dir+'/markovChain/'+str(mean)+'/'+colors[m]+'_'+str(title)+'.txt',"w+")     
+                file_checks.write('Проверка свойств матрицы ' + str(title)+' '+colors[m]+'')
+                count = 0
+                for k in range(6):
+                    reg = matrix_power(mat, k)
+                    for i in range(256):
+                        if reg[i][i] == 0:
+                            count += 1
+                if count == 0:
+                    file_checks.write('Свойство регулярности выполняется\n')
+                    file_checks.write('Свойство рекуррентности выполняется\n')
+                else:
+                    file_checks.write('Свойство регулярности не выполняется\n')
+                    file_checks.write('Свойство рекуррентности не выполняется\n')
+
+                count = 0
+                for i in range(256):
+                    for j in range(256):
+                        if (mat[i][i] == 1) or (mat[i][j] == 0):
+                            count += 1
+                if count == 0:
+                    file_checks.write('Свойство необратимости выполняется\n')
+                else:
+                    file_checks.write('Свойство необратимости не выполняется\n')
+                file_checks.close()
+                data = np.triu(mat) + np.triu(mat).T
+                index = [str(p) for p in range(data.shape[0])]
+                dataframe = pd.DataFrame(data, index=index, columns=index)
+                plt.figure(figsize=(40,40))
+                plt.title(str(colors[m]) + ' ' + title)
+                g = nx.from_pandas_adjacency(dataframe)
+                nx.draw(g, with_labels=True)
+                if not os.path.exists('./output/'+output_dir+'/markovChain/'+str(mean)):
+                    os.makedirs('./output/'+output_dir+'/markovChain/'+str(mean))
+                plt.savefig('./output/'+output_dir+'/markovChain/'+str(mean)+'/'+str(colors[m])+'.png')
+                i += 1
+
+            m += 1
