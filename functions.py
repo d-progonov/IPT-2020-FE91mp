@@ -19,9 +19,14 @@ from scipy import stats
 from tqdm import tqdm
 from matplotlib import image as img
 from numpy.linalg import matrix_power
+from sklearn.linear_model import LinearRegression, LogisticRegression, HuberRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 
 RGB = ['red', 'green', 'blue']
 DISTRIBUTIONS = ['beta', 'gamma', 'laplace', 'norm', 'pareto']
+model_list = [LinearRegression(), LogisticRegression(), HuberRegressor(max_iter= 4000), SVC()]
 
 output_dir = sys.argv[0].split('.')[1].split('/')[1]
 
@@ -431,3 +436,122 @@ def get_markov_chain(decomposed_data):
                 i += 1
 
             m += 1
+
+
+def get_tags(name_list):
+    file_list_rand = create_list_files(target_format_in='.txt',
+                                  path_in='./input/mirflickr/tags/')
+
+    num_list = []
+    for n in name_list:
+        num_list.append(int((n.split('.')[-2]).split('m')[-1]))
+
+    n = 0
+    labels_list = []
+    for file in file_list_rand:
+            df1 = {
+                'name': 0,
+                'label': None,
+            }
+            nam = 'im' + str(((file.split('/')[-1]).split('.')[-2]).split('s')[-1]) + '.jpg'
+            try:
+                tags = (open(file, 'r')).readlines()
+                tags = [line.rstrip() for line in tags]
+                if 'night' in tags:
+                    df1['name'] = nam
+                    df1['label'] = 0
+                    n += 1
+                else:
+                    df1['name'] = nam
+                    df1['label'] = 1
+                labels_list.append(df1)
+            except:
+                df1['name'] = nam
+                df1['label'] = 1
+                labels_list.append(df1)
+                pass
+
+    return pd.DataFrame(labels_list), n
+
+def get_signs_matrix(n):
+    file_list_rand = create_list_files(target_format_in='.jpg',
+                                  path_in='./input/mirflickr/') #путь
+
+    signs = ['mean', 'var', 'skew', 'kurt']
+    RGB = {'red': 0,
+            'green': 1,
+            'blue': 2}
+    data = {}
+    for name, num in RGB.items():
+
+        RGB[name] = {'mean': [],
+                     'var': [],
+                     'skew': [],
+                     'kurt': []}
+
+        data[name] = pd.DataFrame()
+        for image_name in file_list_rand[:n]:
+            image = np.array(Image.open(image_name))
+            a = image[ :, num].ravel()
+            df = {'name': image_name.split('/')[-1],
+                 'mean': np.mean(a),
+                 'var': np.var(a),
+                 'skewness': sp.stats.skew(a),
+                 'kurtosis': sp.stats.kurtosis(a)
+                  }
+
+            data[name] = pd.concat([data[name], pd.DataFrame(pd.DataFrame(df, index=[0, ]))], ignore_index=True)
+
+            RGB[name]['mean'].append(round(df['mean'], 3))
+            RGB[name]['var'].append(round(df['var'], 3))
+            RGB[name]['skew'].append(round(df['skewness'], 3))
+            RGB[name]['kurt'].append(round(df['kurtosis'], 3))
+
+    name_list = data['red']['name'].to_list()
+
+    matrix = []
+    for sign in signs:
+        m = np.array((RGB['red'][sign], RGB['green'][sign], RGB['blue'][sign]))
+        matrix.append(m)
+    matrix = np.array(matrix)
+    output_file_path = './output/'+output_dir+'/matrix.csv'
+    with open(output_file_path, 'w') as f:
+        csv.writer(f, delimiter=' ').writerows(matrix)
+
+    return name_list, data
+
+def classifiers(data, n):
+
+    df = pd.read_csv(data)
+    true_label = df[(df.label == 0)].sample(frac=1).reset_index(drop=True)[:n]
+    false_label = df[(df.label == 1)].sample(frac=1).reset_index(drop=True)[:n]
+    DF = pd.concat([true_label, false_label])
+    DF.to_csv('./output/'+output_dir+'/data.csv', index=False)
+    df = pd.read_csv(data)
+    X = df.iloc[:, 2:-1]
+    y = df['label']
+    for model in model_list:
+        print(str(model))
+        confusion_list = []
+        accuracy_list = []
+        for t in tqdm(range(10)):
+           print(str(t+1)+' iteration')
+           X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+           model.fit(X_train, y_train)
+           pred = model.predict(X_test)
+           confusion_1 = 0
+           y_test = np.array(y_test)
+           for i in range(len(pred)):
+               if pred[i] != y_test[i]:
+                   confusion_1 += 1
+
+           confusion_2 = 1
+           for j in range(len(pred)):
+               if y_test[i] == 0 and pred[i] != y_test[i]:
+                   confusion_2 += 1
+           confusion_list.append(confusion_1 + confusion_2)
+           accuracy_list.append(accuracy_score(y_test, pred.round()))
+        print('average error:')
+        print(sum(confusion_list)/len(confusion_list))
+        print('average accuracy:')
+        print(sum(accuracy_list) / len(accuracy_list))

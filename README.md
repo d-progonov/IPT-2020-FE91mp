@@ -11,6 +11,7 @@ Repo for lab works
 | Variant | 14|
 | Report #1 | [Link](https://docs.google.com/document/d/17XYFA0iRnTYShxJMO5zVkqcA0Pe6QfQEyWQBzSSRirc/edit?usp=sharing)|
 | Report #2 | [Link](https://docs.google.com/document/d/1M1SfdVymhskQUDKvCqbayXEhfLb1PitCiyb6rvOCaTk/edit?usp=sharing)|
+| Report #3 | [Link](https://docs.google.com/document/d/1Tcs4X74lQUYrVoGRAPf1za7VGOTFdWBSpvMzoqEji-c/edit?usp=sharing)|
 
 ## Вихідні дані
 
