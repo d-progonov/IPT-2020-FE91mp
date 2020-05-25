@@ -21,5 +21,7 @@ if __name__ == "__main__":
     red_data.to_csv('./output/lab3/red.csv')
     # green_data.to_csv('green.csv')
     # blue_data.to_csv('blue.csv')
-    lib.classifiers('./output/lab3/red.csv', n)
+    lib.static_classifiers('./output/lab3/red.csv', n)
+    lib.SPAM_classifiers('./output/lab3/SPAM_red.csv', n)
+    lib.CCPEV_classifiers('./output/lab3/CC-PEV_red.csv', n)
     print('>>Finish lab3\n')
